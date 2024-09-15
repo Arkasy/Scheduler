@@ -1,0 +1,8 @@
+output: "/app/log"
+
+jobs:
+  - name: "Hello World"
+    services:
+      - my_swarm_service
+    every: "*_*_*_*_*"
+    command: echo "Hello World"

@@ -1,7 +1,6 @@
 services:
   scheduler:
-    image: scheduler
-    build: .
+    image: ghcr.io/arkasy/scheduler:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./log:/app/log
