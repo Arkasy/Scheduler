@@ -1,0 +1,56 @@
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  docker:
+    name: Docker - Build Release Image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
+          password: ${{ secrets.DOCKER_REGISTRY_KEY }}
+
+      - name: Version
+        run: |
+          TAG=${GITHUB_REF#refs/*/}
+          echo "RELEASE_VERSION=$TAG" >> $GITHUB_ENV
+          TAG=${TAG#"v"}
+          echo $TAG > .version
+          TIMESTAMP=$(date '+%s')
+          echo $TIMESTAMP > .build
+
+      - name: Docker Build
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          build-args: |
+            RAILS_ENV=production
+          tags: ghcr.io/${{ secrets.DOCKER_REGISTRY_USERNAME }}/scheduler:latest,ghcr.io/${{ secrets.DOCKER_REGISTRY_USERNAME }}/scheduler:${{ env.RELEASE_VERSION }}
+
+      - name: Cleanup Packages
+        uses: actions/delete-package-versions@v4.1.1
+        with:
+          owner: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
+          package-name: "scheduler"
+          package-type: "container"
+          delete-only-untagged-versions: "true"
+          token: ${{ secrets.DOCKER_REGISTRY_KEY }}
+
+  deploy:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    needs: docker
+    steps:
+      - name: Webhook
+        uses: distributhor/workflow-webhook@v3
+        env:
+          webhook_url: ${{ secrets.SERVER_WEBHOOK_URL }}/${{ secrets.SERVER_WEBHOOK_SCHEDULER_ID }}
+          webhook_secret: ${{ secrets.SERVER_WEBHOOK_SECRET }}

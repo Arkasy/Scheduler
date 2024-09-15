@@ -1,0 +1,23 @@
+output: "/app/log"
+
+jobs:
+  - name: "Destroy Accounts"
+    services:
+      - ludekia_production_app
+      - ludekia_staging_app
+    every: "0_1_*_*_*"
+    command: bundle exec rake destroy:accounts --silent
+
+  - name: "Destroy Profiles"
+    services:
+      - ludekia_production_app
+      - ludekia_staging_app
+    every: "0_1_*_*_*"
+    command: bundle exec rake destroy:profiles --silent
+
+  - name: "Run Quest"
+    services:
+      - ludekia_production_app
+      - ludekia_staging_app
+    every: "0_0_*_*_1"
+    command: bundle exec rake quest:weekly:run --silent

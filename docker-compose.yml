@@ -1,0 +1,10 @@
+services:
+  scheduler:
+    image: scheduler
+    build: .
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./log:/app/log
+      - ./schedule.yml:/app/schedule.yml
+    environment:
+      TZ: Europe/Paris
